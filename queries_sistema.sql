@@ -56,10 +56,6 @@ INSERT INTO Reserva_Vagas (id_reserva, id_vaga) VALUES (2, 3);
 SELECT * FROM Reserva_Vagas;
 
 
--- =============================================================================
--- 2. FUNCIONALIDADES PRINCIPAIS 
--- =============================================================================
-
 SELECT 
     v.id_vaga,
     q.numero AS numero_quarto,
@@ -81,10 +77,6 @@ AND q.tem_banheiro = 1
 AND v.posicao_beliche = 'baixo';   
 
 
--- -----------------------------------------------------------------------------
---  OCUPAÇÃO:  Reservas dos Clientes
--- -----------------------------------------------------------------------------
-
 SELECT 
     r.id_reserva,
     c.nome AS nome_cliente,
@@ -101,10 +93,6 @@ JOIN Vagas v ON rv.id_vaga = v.id_vaga
 JOIN Quartos q ON v.id_quarto = q.id_quarto
 ORDER BY r.data_inicio ASC;
 
-
--- -----------------------------------------------------------------------------
--- RELATÓRIO GERENCIAL: lucro por quarto
--- -----------------------------------------------------------------------------
 
 
 SELECT 
