@@ -2,23 +2,20 @@ import mysql.connector
 from mysql.connector import Error
 from datetime import datetime
 
-# Configuração da conexão com o phpMyAdmin / MySQL
 def obter_conexao():
     try:
         conexao = mysql.connector.connect(
             host='localhost',
-            user='root',         # Usuário padrão do phpMyAdmin
-            password='',         # Senha padrão do phpMyAdmin (geralmente vazia)
-            database='hostel'    # Seu banco de dados
+            user='root',       
+            password='',       
+            database='hostel'   
         )
         return conexao
     except Error as e:
         print(f"❌ Erro ao conectar ao MySQL: {e}")
         return None
 
-# ==========================================
-# 1. OPERAÇÕES CRUD: CLIENTES
-# ==========================================
+
 
 def cadastrar_cliente(nome, email, cpf, telefone, cartao_credito):
     conn = obter_conexao()
@@ -87,16 +84,12 @@ def deletar_cliente(id_cliente):
         conn.close()
 
 
-# ==========================================
-# 2. FUNCIONALIDADE PRINCIPAL: BUSCA DINÂMICA
-# ==========================================
 
 def buscar_vagas_disponiveis(data_ini, data_fim, apenas_com_banheiro=None, apenas_sol_manha=None, beliche_pref=None):
     conn = obter_conexao()
     if not conn: return []
     cursor = conn.cursor(dictionary=True)
     
-    # Query base que checa colisão de datas ignorando vagas ocupadas no período
     query = """
         SELECT v.id_vaga, q.numero AS quarto, q.tem_banheiro, v.numero_vaga, v.posicao_beliche, v.preco_diaria
         FROM Vagas v
@@ -110,7 +103,6 @@ def buscar_vagas_disponiveis(data_ini, data_fim, apenas_com_banheiro=None, apena
     """
     parametros = [data_ini, data_fim]
     
-    # Filtros dinâmicos opcionais solicitados no minimundo
     if apenas_com_banheiro is not None:
         query += " AND q.tem_banheiro = %s"
         parametros.append(1 if apenas_com_banheiro else 0)
@@ -128,16 +120,11 @@ def buscar_vagas_disponiveis(data_ini, data_fim, apenas_com_banheiro=None, apena
     return vagas
 
 
-# ==========================================
-# 3. REGRAS DE NEGÓCIO: RESERVA E CANCELAMENTO
-# ==========================================
-
 def efetuar_reserva(id_cliente, lista_id_vagas, data_ini, data_fim):
     conn = obter_conexao()
     if not conn: return
     cursor = conn.cursor()
     
-    # Cálculo das diárias (Meio-dia ao meio-dia)
     d1 = datetime.strptime(data_ini, "%Y-%m-%d")
     d2 = datetime.strptime(data_fim, "%Y-%m-%d")
     dias = (d2 - d1).days
@@ -146,7 +133,6 @@ def efetuar_reserva(id_cliente, lista_id_vagas, data_ini, data_fim):
         print("❌ Erro: A data de término deve ser posterior à data de início.")
         return
         
-    # Somando o valor total das diárias de todas as vagas escolhidas
     valor_total = 0.0
     for id_vaga in lista_id_vagas:
         cursor.execute("SELECT preco_diaria FROM Vagas WHERE id_vaga = %s", (id_vaga,))
@@ -155,12 +141,10 @@ def efetuar_reserva(id_cliente, lista_id_vagas, data_ini, data_fim):
             valor_total += float(res[0]) * dias
 
     try:
-        # 1. Cria o registro da Reserva
         query_reserva = "INSERT INTO Reservas (id_cliente, data_inicio, data_fim, valor_total) VALUES (%s, %s, %s, %s)"
         cursor.execute(query_reserva, (id_cliente, data_ini, data_fim, valor_total))
         id_reserva = cursor.lastrowid
         
-        # 2. Vincula as vagas à reserva criada (Tabela Associativa N:M)
         for id_vaga in lista_id_vagas:
             cursor.execute("INSERT INTO Reserva_Vagas (id_reserva, id_vaga) VALUES (%s, %s)", (id_reserva, id_vaga))
             
@@ -186,7 +170,6 @@ def cancelar_reserva(id_reserva):
         conn.close()
         return
         
-    # Regra do minimundo: cancelamento aceito apenas até 3 dias antes do check-in
     data_inicio_reserva = datetime.combine(res[0], datetime.min.time())
     hoje = datetime.now()
     dias_antecedencia = (data_inicio_reserva - hoje).days
@@ -202,9 +185,6 @@ def cancelar_reserva(id_reserva):
     conn.close()
 
 
-# ==========================================
-# MENU INTERATIVO DE EXECUÇÃO VIA TERMINAL
-# ==========================================
 
 def menu():
     print("\n" + "="*40)
